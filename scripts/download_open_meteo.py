@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Hasta que el proyecto se empaquete con pyproject.toml, el paquete se importa desde src/.
 sys.path.insert(0, str(ROOT / "src"))
 
+from energy_intelligence.ingestion import manifest  # noqa: E402
 from energy_intelligence.ingestion.http import build_session  # noqa: E402
 from energy_intelligence.ingestion.open_meteo import download_all  # noqa: E402
 
@@ -31,7 +32,8 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     with (ROOT / "config" / "sources.toml").open("rb") as file:
-        config = tomllib.load(file)["open_meteo"]
+        all_config = tomllib.load(file)
+    config = all_config["open_meteo"]
 
     # Sin reintentos ante 429: si Open-Meteo limita, se corta y se retoma después.
     session = build_session(retry_on_429=False)
@@ -40,7 +42,9 @@ def main() -> int:
     logger.info(
         "%d descargados, %d ya existían, %d fallidos, %d pendientes", downloaded, existing, failed, remaining
     )
-    if failed:
+
+    report = manifest.update(ROOT / "data" / "raw", manifest.sources_from_config(all_config))
+    if failed or not report.ok:
         return 1
     return 2 if remaining else 0
 

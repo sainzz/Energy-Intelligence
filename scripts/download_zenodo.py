@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Hasta que el proyecto se empaquete con pyproject.toml, el paquete se importa desde src/.
 sys.path.insert(0, str(ROOT / "src"))
 
+from energy_intelligence.ingestion import manifest  # noqa: E402
 from energy_intelligence.ingestion.zenodo import (  # noqa: E402
     DownloadError,
     build_session,
@@ -30,7 +31,8 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     with (ROOT / "config" / "sources.toml").open("rb") as file:
-        config = tomllib.load(file)["zenodo"]
+        all_config = tomllib.load(file)
+    config = all_config["zenodo"]
     dest_dir = ROOT / config["dest_dir"]
 
     session = build_session()
@@ -50,7 +52,9 @@ def main() -> int:
             failures += 1
 
     logger.info("%d de %d archivos listos en %s", len(remote_files) - failures, len(remote_files), dest_dir)
-    return 1 if failures else 0
+
+    report = manifest.update(ROOT / "data" / "raw", manifest.sources_from_config(all_config))
+    return 1 if failures or not report.ok else 0
 
 
 if __name__ == "__main__":
