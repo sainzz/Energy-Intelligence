@@ -1,0 +1,27 @@
+# Entorno virtual
+venv/
+.venv/
+
+# Python y pruebas
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Secretos (solo se versiona .env.example)
+.env
+
+# Datos descargados y generados: se regeneran desde la fuente
+data/
+
+# Bases analíticas, experimentos y orquestación
+*.duckdb
+*.duckdb.wal
+mlruns/
+logs/
+
+# Editor y sistema
+.claude/settings.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
